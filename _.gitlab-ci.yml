@@ -1,0 +1,77 @@
+# Official language image. Look for the different tagged releases at:
+# https://hub.docker.com/r/library/python/tags/
+image: python:3.11
+
+stages:
+  - test
+  - type_checking
+  - release
+
+# Prepare the development environment
+.devsetup:
+  before_script:
+    - python -V
+    - pip install -U pip
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install .[develop]
+  rules:
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+#######################
+## Platforms testing ##
+
+pytest:
+  stage: test
+  before_script:
+    - python -V
+    - pip install -U pip
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install .[tests]
+  allow_failure: true
+  script:
+    - pytest
+  coverage: /TOTAL.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/
+
+mypy:
+  stage: type_checking
+  extends: .devsetup
+  script:
+    - pip install .[tests]
+    - mypy src/spacecoords --follow-untyped-imports --disallow-untyped-defs --warn-unused-ignores
+
+
+###############
+## Releasing ##
+
+# TODO: Compile documentation for publication
+
+
+# Build and check integrity of distribution
+# Then publish package on public PyPI
+pypi:
+  stage: release
+  variables:
+    #Use a gitlab variable to securely store the token
+    PYPI_TOKEN: $PYPI_TOKEN
+  before_script:
+    - python -V
+    - pip install -U pip
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install .[develop]
+  script:
+    - python -m build
+    - python -m twine check dist/*
+    - >
+      TWINE_USERNAME=__token__
+      TWINE_PASSWORD=$PYPI_TOKEN
+      python -m twine upload dist/*
+  artifacts:
+    paths:
+      - dist/*
+  only:
+    - tags
