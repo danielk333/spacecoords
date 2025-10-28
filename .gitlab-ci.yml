@@ -14,10 +14,6 @@ stages:
     - pip install -U pip
     - python -m venv venv
     - source venv/bin/activate
-  rules:
-    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
-    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
-    - if: $CI_COMMIT_BRANCH == "main"
 
 #######################
 ## Platforms testing ##
@@ -35,6 +31,8 @@ pytest:
     - pip install .[tests]
     - pytest
   rules:
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
     - if: $CI_COMMIT_BRANCH == "main"
   coverage: /TOTAL.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/
 
@@ -44,6 +42,10 @@ mypy:
   script:
     - pip install .[tests]
     - mypy src/spacecoords --follow-untyped-imports --disallow-untyped-defs --warn-unused-ignores
+  rules:
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
+    - if: $CI_COMMIT_BRANCH == "main"
 
 ###############
 ## Releasing ##
