@@ -18,7 +18,7 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
 ]
 requires-python = ">=3.10"
-dependencies = ["numpy >= 2.3", "astropy>=7.1"]
+dependencies = ["numpy >= 2"]
 
 [project.urls]
 Documentation = "https://danielk.developer.irf.se/spacecoords/"
@@ -26,6 +26,7 @@ Repository = "https://github.com/danielk333/spacecoords"
 
 
 [project.optional-dependencies]
+all = ["astropy>=7.1", "spiceypy>=8.0.0", "jplephem>=2.23"]
 develop = [
   "pytest",
   "pytest-cov",
@@ -45,7 +46,7 @@ develop = [
   "mkdocs-literate-nav",
   "mkdocs-section-index",
 ]
-tests = ["mypy", "pytest", "pytest-cov"]
+tests = ["pytest", "pytest-cov"]
 
 
 [tool.setuptools]

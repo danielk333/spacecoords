@@ -14,7 +14,6 @@ stages:
     - pip install -U pip
     - python -m venv venv
     - source venv/bin/activate
-    - pip install .[develop]
   rules:
     - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
     - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
@@ -24,16 +23,19 @@ stages:
 ## Platforms testing ##
 
 pytest:
-  stage: test
-  before_script:
-    - python -V
-    - pip install -U pip
-    - python -m venv venv
+  image: ghcr.io/astral-sh/uv:bookworm-slim
+  allow_failure: true
+  parallel:
+    matrix:
+      - VERSION: ["3.10", "3.11", "3.12", "3.13"]
+  script:
+    - uv python install $VERSION
+    - uv venv --seed --python $VERSION ./venv
     - source venv/bin/activate
     - pip install .[tests]
-  allow_failure: true
-  script:
     - pytest
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
   coverage: /TOTAL.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/
 
 mypy:
@@ -43,27 +45,31 @@ mypy:
     - pip install .[tests]
     - mypy src/spacecoords --follow-untyped-imports --disallow-untyped-defs --warn-unused-ignores
 
-
 ###############
 ## Releasing ##
 
-# TODO: Compile documentation for publication
-
+# Compile documentation for publication
+pages:
+  stage: release
+  extends: .devsetup
+  script:
+    - mkdocs build --site-dir public
+  artifacts:
+    paths:
+      - public
+  only:
+    - tags
 
 # Build and check integrity of distribution
 # Then publish package on public PyPI
 pypi:
   stage: release
+  extends: .devsetup
   variables:
     #Use a gitlab variable to securely store the token
     PYPI_TOKEN: $PYPI_TOKEN
-  before_script:
-    - python -V
-    - pip install -U pip
-    - python -m venv venv
-    - source venv/bin/activate
-    - pip install .[develop]
   script:
+    - pip install .[develop]
     - python -m build
     - python -m twine check dist/*
     - >

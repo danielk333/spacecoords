@@ -1,132 +1,52 @@
 #!/usr/bin/env python
 
-"""Useful coordinate related functions."""
+"""Useful utility functions related to linear algebra"""
 
 import numpy as np
-
-CLOSE_TO_POLE_LIMIT = 1e-9**2
-CLOSE_TO_POLE_LIMIT_rad = np.arctan(1 / np.sqrt(CLOSE_TO_POLE_LIMIT))
-
-
-def cart_to_sph(vec, degrees=False):
-    """Convert from Cartesian coordinates (east, north, up) to Spherical
-    coordinates (azimuth, elevation, range) in a angle east of north and
-    elevation fashion. Returns azimuth between [-pi, pi] and elevation between
-    [-pi/2, pi/2].
-
-    Parameters
-    ----------
-    vec : numpy.ndarray
-        (3, N) or (3,) vector of Cartesian coordinates (east, north, up).
-        This argument is vectorized in the second array dimension.
-    degrees : bool
-        If :code:`True`, use degrees. Else all angles are given in radians.
-
-    Returns
-    -------
-    numpy.ndarray
-        (3, N) or (3, ) vector of Spherical coordinates
-        (azimuth, elevation, range).
-
-    Notes
-    -----
-    Azimuth close to pole convention
-        Uses a :code:`CLOSE_TO_POLE_LIMIT` constant when transforming determine
-        if the point is close to the pole and sets the azimuth by definition
-        to 0 "at" the poles for consistency.
-
-    """
-
-    r2_ = vec[0, ...] ** 2 + vec[1, ...] ** 2
-
-    sph = np.empty(vec.shape, dtype=vec.dtype)
-
-    if len(vec.shape) == 1:
-        if r2_ < CLOSE_TO_POLE_LIMIT:
-            sph[0] = 0.0
-            sph[1] = np.sign(vec[2]) * np.pi * 0.5
-        else:
-            sph[0] = np.arctan2(vec[0], vec[1])
-            sph[1] = np.arctan(vec[2] / np.sqrt(r2_))
-    else:
-        inds_ = r2_ < CLOSE_TO_POLE_LIMIT
-        not_inds_ = np.logical_not(inds_)
-
-        sph[0, inds_] = 0.0
-        sph[1, inds_] = np.sign(vec[2, inds_]) * np.pi * 0.5
-        sph[0, not_inds_] = np.arctan2(vec[0, not_inds_], vec[1, not_inds_])
-        sph[1, not_inds_] = np.arctan(vec[2, not_inds_] / np.sqrt(r2_[not_inds_]))
-
-    sph[2, ...] = np.sqrt(r2_ + vec[2, ...] ** 2)
-    if degrees:
-        sph[:2, ...] = np.degrees(sph[:2, ...])
-
-    return sph
+import numpy.typing as npt
+from .types import (
+    NDArray_3,
+    NDArray_3xN,
+    NDArray_N,
+    NDArray_3x3,
+    NDArray_3x3xN,
+    NDArray_2x2,
+    NDArray_NxN,
+)
 
 
-def sph_to_cart(vec, degrees=False):
-    """Convert from spherical coordinates (azimuth, elevation, range) to
-    Cartesian (east, north, up) in a angle east of north and elevation fashion.
-
-
-    Parameters
-    ----------
-    vec : numpy.ndarray
-        (3, N) or (3,) vector of Cartesian Spherical
-        (azimuth, elevation, range).
-        This argument is vectorized in the second array dimension.
-    degrees : bool
-        If :code:`True`, use degrees. Else all angles are given in radians.
-
-    Returns
-    -------
-    numpy.ndarray
-        (3, N) or (3, ) vector of Cartesian coordinates (east, north, up).
-
-    """
-
-    _az = vec[0, ...]
-    _el = vec[1, ...]
-    if degrees:
-        _az, _el = np.radians(_az), np.radians(_el)
-    cart = np.empty(vec.shape, dtype=vec.dtype)
-
-    cart[0, ...] = vec[2, ...] * np.sin(_az) * np.cos(_el)
-    cart[1, ...] = vec[2, ...] * np.cos(_az) * np.cos(_el)
-    cart[2, ...] = vec[2, ...] * np.sin(_el)
-
-    return cart
-
-
-def vector_angle(a, b, degrees=False):
+def vector_angle(
+    a: NDArray_3 | NDArray_3xN, b: NDArray_3 | NDArray_3xN, degrees: bool = False
+) -> NDArray_N | float:
     """Angle between two vectors.
 
     Parameters
     ----------
-    a : numpy.ndarray
+    a
         (3, N) or (3,) vector of Cartesian coordinates.
         This argument is vectorized in the second array dimension.
-    b : numpy.ndarray
+    b
         (3, N) or (3,) vector of Cartesian coordinates.
         This argument is vectorized in the second array dimension.
-    degrees : bool
-        If :code:`True`, use degrees. Else all angles are given in radians.
+    degrees
+        If `True`, use degrees. Else all angles are given in radians.
 
     Returns
     -------
-    numpy.ndarray or float
         (N, ) or float vector of angles between input vectors.
 
     Notes
     -----
     Definition
-        :math:`\\theta = \\cos^{-1}\\frac{
-            \\langle\\mathbf{a},\\mathbf{b}\\rangle
-        }{
-            |\\mathbf{a}||\\mathbf{b}|
-        }`
-        where :math:`\\langle\\mathbf{a},\\mathbf{b}\\rangle` is the dot
-        product and :math:`|\\mathbf{a}|` denotes the norm.
+        $$
+            \\theta = \\cos^{-1}\\frac{
+                \\langle\\mathbf{a},\\mathbf{b}\\rangle
+            }{
+                |\\mathbf{a}||\\mathbf{b}|
+            }
+        $$
+        where $\\langle\\mathbf{a},\\mathbf{b}\\rangle$ is the dot
+        product and $|\\mathbf{a}|$ denotes the norm.
 
     """
     a_norm = np.linalg.norm(a, axis=0)
@@ -156,27 +76,29 @@ def vector_angle(a, b, degrees=False):
     return theta
 
 
-def rot_mat_x(theta, dtype=np.float64, degrees=False):
+def rot_mat_x(
+    theta: NDArray_N | float, dtype: npt.DTypeLike = np.float64, degrees: bool = False
+) -> NDArray_3x3xN | NDArray_3x3:
     """Compute matrix for rotation of R3 vector through angle theta
     around the X-axis. For frame rotation, use the transpose.
 
     Parameters
     ----------
-    theta : float or ndarray
+    theta
         Angle to rotate.
-    dtype : numpy.dtype
+    dtype
         Numpy datatype of the rotation matrix.
-    degrees : bool
-        If :code:`True`, use degrees. Else all angles are given in radians.
+    degrees
+        If `True`, use degrees. Else all angles are given in radians.
 
     Returns
     -------
-    numpy.ndarray
         (3, 3) Rotation matrix, or (3, 3, n) tensor if theta is vector input.
 
     """
     if degrees:
         theta = np.radians(theta)
+    size: tuple[int, ...]
     if isinstance(theta, np.ndarray) and theta.ndim > 0:
         size = (3, 3, len(theta))
     else:
@@ -192,27 +114,29 @@ def rot_mat_x(theta, dtype=np.float64, degrees=False):
     return rot
 
 
-def rot_mat_y(theta, dtype=np.float64, degrees=False):
+def rot_mat_y(
+    theta: NDArray_N | float, dtype: npt.DTypeLike = np.float64, degrees: bool = False
+) -> NDArray_3x3xN | NDArray_3x3:
     """Compute matrix for rotation of R3 vector through angle theta
     around the Y-axis. For frame rotation, use the transpose.
 
     Parameters
     ----------
-    theta : float or ndarray
+    theta
         Angle to rotate.
-    dtype : numpy.dtype
+    dtype
         Numpy datatype of the rotation matrix.
-    degrees : bool
-        If :code:`True`, use degrees. Else all angles are given in radians.
+    degrees
+        If `True`, use degrees. Else all angles are given in radians.
 
     Returns
     -------
-    numpy.ndarray
         (3, 3) Rotation matrix, or (3, 3, n) tensor if theta is vector input.
 
     """
     if degrees:
         theta = np.radians(theta)
+    size: tuple[int, ...]
     if isinstance(theta, np.ndarray) and theta.ndim > 0:
         size = (3, 3, len(theta))
     else:
@@ -228,27 +152,29 @@ def rot_mat_y(theta, dtype=np.float64, degrees=False):
     return rot
 
 
-def rot_mat_z(theta, dtype=np.float64, degrees=False):
+def rot_mat_z(
+    theta: NDArray_N | float, dtype: npt.DTypeLike = np.float64, degrees: bool = False
+) -> NDArray_3x3xN | NDArray_3x3:
     """Compute matrix for rotation of R3 vector through angle theta
     around the Z-axis. For frame rotation, use the transpose.
 
     Parameters
     ----------
-    theta : float or np.ndarray
+    theta
         Angle to rotate.
-    dtype : numpy.dtype
+    dtype
         Numpy datatype of the rotation matrix.
-    degrees : bool
-        If :code:`True`, use degrees. Else all angles are given in radians.
+    degrees
+        If `True`, use degrees. Else all angles are given in radians.
 
     Returns
     -------
-    numpy.ndarray
         (3, 3) Rotation matrix, or (3, 3, n) tensor if theta is vector input.
 
     """
     if degrees:
         theta = np.radians(theta)
+    size: tuple[int, ...]
     if isinstance(theta, np.ndarray) and theta.ndim > 0:
         size = (3, 3, len(theta))
     else:
@@ -264,7 +190,7 @@ def rot_mat_z(theta, dtype=np.float64, degrees=False):
     return rot
 
 
-def rot_mat_2d(theta, dtype=np.float64, degrees=False):
+def rot_mat_2d(theta: float, dtype: npt.DTypeLike = np.float64, degrees: bool = False) -> NDArray_2x2:
     """Matrix for rotation of R2 vector in the plane through angle theta
     For frame rotation, use the transpose.
 
@@ -290,22 +216,57 @@ def rot_mat_2d(theta, dtype=np.float64, degrees=False):
     return np.array([[ca, -sa], [sa, ca]], dtype=dtype)
 
 
-def scale_mat_2d(x, y):
+def scale_mat_2d(x: float, y: float, dtype: npt.DTypeLike = np.float64) -> NDArray_2x2:
     """Matrix for 2d scaling.
 
     Parameters
     ----------
-    x : float
+    x
         Scaling coefficient for first coordinate axis.
-    y : float
+    y
         Scaling coefficient for second coordinate axis.
 
     Returns
     -------
-    numpy.ndarray
         (2, 2) Scaling matrix.
     """
-    M_scale = np.zeros((2, 2), dtype=np.float64)
+    M_scale = np.zeros((2, 2), dtype=dtype)
     M_scale[0, 0] = x
     M_scale[1, 1] = y
     return M_scale
+
+
+def vec_to_vec(vec_in: NDArray_N, vec_out: NDArray_N) -> NDArray_NxN:
+    """Get the rotation matrix that rotates `vec_in` to `vec_out` along the
+    plane containing both. Uses quaternion calculations.
+    """
+    N = len(vec_in)
+    if N != len(vec_out):
+        raise ValueError("Input and output vectors must be same dimensionality.")
+    assert N == 3, "Only implemented for 3d vectors"
+
+    a = vec_in / np.linalg.norm(vec_in)
+    b = vec_out / np.linalg.norm(vec_out)
+
+    adotb = np.dot(a, b)
+    axb = np.cross(a, b)
+    axb_norm = np.linalg.norm(axb)
+
+    # rotation in the plane frame of `vec_in` and `vec_out`
+    G = np.zeros((N, N), dtype=vec_in.dtype)
+    G[0, 0] = adotb
+    G[0, 1] = -axb_norm
+    G[1, 0] = axb_norm
+    G[1, 1] = adotb
+    G[2, 2] = 1
+
+    # inverse of change of basis from standard orthonormal to `vec_in` and `vec_out` plane
+    F = np.zeros((N, N), dtype=vec_in.dtype)
+    F[:, 0] = a
+    F[:, 1] = (b - adotb * a) / np.linalg.norm(b - adotb * a)
+    F[:, 2] = axb
+
+    # go to frame, rotation in plane, leave frame
+    R = F @ G @ np.linalg.inv(F)
+
+    return R
