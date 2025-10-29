@@ -3,7 +3,7 @@
 """Coordinate frame transformations and related functions.
 Main usage is the `convert` function that wraps Astropy frame transformations.
 """
-from typing import Type
+from typing import Type, Any
 import numpy as np
 import astropy.coordinates as coord
 import astropy.units as units
@@ -57,7 +57,13 @@ def is_geocentric(frame: str) -> bool:
     return not not_geocentric(frame)
 
 
-def convert(t: NDArray_N, states: NDArray_6xN, in_frame: str, out_frame: str, **kwargs) -> NDArray_6xN:
+def convert(
+    t: NDArray_N,
+    states: NDArray_6xN,
+    in_frame: str,
+    out_frame: str,
+    frame_kwargs: dict[str, Any],
+) -> NDArray_6xN:
     """Perform predefined coordinate transformations using Astropy.
     Always returns a copy of the array.
 
@@ -72,9 +78,9 @@ def convert(t: NDArray_N, states: NDArray_6xN, in_frame: str, out_frame: str, **
         Name of the frame the input states are currently in.
     out_frame
         Name of the state to transform to.
-    **kwargs
-        Any arguments needed for the specific transform detailed by astropy
-        can be supplied in the kwargs
+    frame_kwargs
+        Any arguments needed for the specific transform detailed by `astropy`
+        in their documentation
 
     Returns
     -------
@@ -93,30 +99,31 @@ def convert(t: NDArray_N, states: NDArray_6xN, in_frame: str, out_frame: str, **
         in_frame_ = ASTROPY_FRAMES[in_frame]
         in_frame_cls = getattr(coord, in_frame_)
     else:
-        err_str = (
-            f"In frame '{in_frame}' not recognized, " "please check spelling or perform manual transformation"
-        )
-        raise ValueError(err_str)
+        err_str = [
+            f"In frame '{in_frame}' not recognized, ",
+            "please check spelling or perform manual transformation",
+        ]
+        raise ValueError("".join(err_str))
 
     kw = {}
-    kw.update(kwargs)
+    kw.update(frame_kwargs)
     if in_frame_ not in ASTROPY_NOT_OBSTIME:
         kw["obstime"] = t
 
-    astropy_states = _convert_to_astropy(states, in_frame_cls, **kw)
+    astropy_states = _convert_to_astropy(states, in_frame_cls, kw)
 
     if out_frame in ASTROPY_FRAMES:
         out_frame_ = ASTROPY_FRAMES[out_frame]
         out_frame_cls = getattr(coord, out_frame_)
     else:
-        err_str = (
-            f"Out frame '{out_frame}' not recognized, "
-            "please check spelling or perform manual transformation"
-        )
-        raise ValueError(err_str)
+        err_str = [
+            f"Out frame '{out_frame}' not recognized, ",
+            "please check spelling or perform manual transformation",
+        ]
+        raise ValueError("".join(err_str))
 
     kw = {}
-    kw.update(kwargs)
+    kw.update(frame_kwargs)
     if out_frame_ not in ASTROPY_NOT_OBSTIME:
         kw["obstime"] = t
 
@@ -129,10 +136,14 @@ def convert(t: NDArray_N, states: NDArray_6xN, in_frame: str, out_frame: str, **
     return rets
 
 
-def _convert_to_astropy(states: NDArray_6xN | NDArray_6, frame: Type[T], **kwargs) -> T:
+def _convert_to_astropy(
+    states: NDArray_6xN | NDArray_6,
+    frame: Type[T],
+    frame_kwargs: dict[str, Any],
+) -> T:
     state_p = coord.CartesianRepresentation(states[:3, ...] * units.m)
     state_v = coord.CartesianDifferential(states[3:, ...] * units.m / units.s)
-    astropy_states = frame(state_p.with_differentials(state_v), **kwargs)  # type: ignore
+    astropy_states = frame(state_p.with_differentials(state_v), **frame_kwargs)  # type: ignore
     return astropy_states
 
 

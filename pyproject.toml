@@ -26,7 +26,7 @@ Repository = "https://github.com/danielk333/spacecoords"
 
 
 [project.optional-dependencies]
-all = ["astropy>=7.1", "spiceypy>=8.0.0", "jplephem>=2.23"]
+all = ["astropy>=7.1", "spiceypy>=8.0.0", "jplephem>=2.23", "requests>=2.20"]
 develop = [
   "pytest",
   "pytest-cov",
@@ -53,6 +53,8 @@ tests = ["pytest", "pytest-cov"]
 include-package-data = true
 license-files = ["LICENSE"]
 
+[project.scripts]
+spacecoords = "spacecoords.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
