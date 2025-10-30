@@ -29,9 +29,9 @@ else:
     astropy = _make_missing_module("celestial", "astropy")
 
 if importlib.util.find_spec("jplephem") is not None:
-    from . import solarsystem_states
+    from . import spk_basic
 else:
-    naif_ephemeris = _make_missing_module("solarsystem_states", "jplephem")
+    naif_ephemeris = _make_missing_module("spk_basic", "jplephem")
 
 if importlib.util.find_spec("spice") is not None:
     from . import spice

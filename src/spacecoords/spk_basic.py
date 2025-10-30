@@ -4,7 +4,7 @@ from jplephem.spk import SPK
 
 """Mapping from body name to integer id's used by the kernels.
 
-Taken from `astropy.coordinates.solar_system`
+#todo: these can be expanded to get any body probably? and do more than astropy implementation does
 """
 BODY_NAME_TO_KERNEL_SPEC = OrderedDict(
     [

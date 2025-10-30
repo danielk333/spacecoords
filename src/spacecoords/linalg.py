@@ -190,7 +190,11 @@ def rot_mat_z(
     return rot
 
 
-def rot_mat_2d(theta: float, dtype: npt.DTypeLike = np.float64, degrees: bool = False) -> NDArray_2x2:
+def rot_mat_2d(
+    theta: float,
+    dtype: npt.DTypeLike = np.float64,
+    degrees: bool = False,
+) -> NDArray_2x2:
     """Matrix for rotation of R2 vector in the plane through angle theta
     For frame rotation, use the transpose.
 
@@ -216,7 +220,11 @@ def rot_mat_2d(theta: float, dtype: npt.DTypeLike = np.float64, degrees: bool = 
     return np.array([[ca, -sa], [sa, ca]], dtype=dtype)
 
 
-def scale_mat_2d(x: float, y: float, dtype: npt.DTypeLike = np.float64) -> NDArray_2x2:
+def scale_mat_2d(
+    x: float,
+    y: float,
+    dtype: npt.DTypeLike = np.float64,
+) -> NDArray_2x2:
     """Matrix for 2d scaling.
 
     Parameters

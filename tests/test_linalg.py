@@ -80,6 +80,26 @@ class TestAngles(unittest.TestCase):
             )
             nt.assert_almost_equal(th, self.theta[ind])
 
+    def test_vector_angle(self):
+        x = np.array([1, 0, 0])
+        y = np.array([1, 1, 0])
+        theta = linalg.vector_angle(x, y, degrees=True)
+        self.assertAlmostEqual(theta, 45.0)
+
+        y = np.array([0, 1, 0])
+        theta = linalg.vector_angle(x, y, degrees=True)
+        self.assertAlmostEqual(theta, 90.0)
+
+        theta = linalg.vector_angle(x, x, degrees=True)
+        self.assertAlmostEqual(theta, 0.0)
+
+        theta = linalg.vector_angle(x, -x, degrees=True)
+        self.assertAlmostEqual(theta, 180.0)
+
+        xx = np.array([0.11300039, -0.85537661, 0.50553118])
+        theta = linalg.vector_angle(xx, xx, degrees=True)
+        self.assertAlmostEqual(theta, 0.0)
+
     def test_vector_angle_first_vectorized(self):
         th = linalg.vector_angle(self.P, self.p, degrees=False)
         nt.assert_array_almost_equal(th, self.phi)

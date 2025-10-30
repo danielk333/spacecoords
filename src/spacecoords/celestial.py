@@ -4,14 +4,18 @@
 Main usage is the `convert` function that wraps Astropy frame transformations.
 """
 from typing import Type, Any
+from pathlib import Path
 import numpy as np
+from astropy.time import Time
 import astropy.coordinates as coord
 import astropy.units as units
-from astropy.coordinates import EarthLocation
+import astropy.config as config
 
 from .types import (
     NDArray_N,
+    NDArray_3,
     NDArray_6,
+    NDArray_3xN,
     NDArray_6xN,
     T,
 )
@@ -44,6 +48,28 @@ ASTROPY_NOT_OBSTIME = [
     "BarycentricMeanEcliptic",
     "BarycentricTrueEcliptic",
 ]
+
+
+def get_solarsystem_body_state(
+    body: str,
+    time: Time,
+    kernel_dir: Path,
+    ephemeris: str = "jpl",
+) -> NDArray_6xN | NDArray_6:
+    """
+    
+    This is to not have to remember how to do this astropy config stuff
+    # https://docs.astropy.org/en/stable/api/astropy.coordinates.solar_system_ephemeris.html
+    """
+    with config.set_temp_cache(path=str(kernel_dir), delete=False):
+        pos, vel = coord.get_body_barycentric_posvel(body, time, ephemeris=ephemeris)
+
+    size = len(time)
+    shape: tuple[int, ...] = (6, size) if size > 0 else (6,)
+    state = np.empty(shape, dtype=np.float64)
+    state[:3, ...] = pos.xyz.to(units.m).value
+    state[3:, ...] = vel.d_xyz.to(units.m / units.s).value
+    return state
 
 
 def not_geocentric(frame: str) -> bool:
@@ -147,63 +173,54 @@ def _convert_to_astropy(
     return astropy_states
 
 
-def geodetic_to_ITRS(lat, lon, alt, degrees=True, ellipsoid=None):
-    """Use `astropy.coordinates.EarthLocation` to transform from geodetic to ITRS."""
-    raise NotImplementedError()
-    # todo: replace this with astropy.coordinates.WGS84GeodeticRepresentation
-    # so that it can be vectorized - we never use any other ellipsoid anyway
+def geodetic_to_ITRS(
+    lat: NDArray_N | float,
+    lon: NDArray_N | float,
+    alt: NDArray_N | float,
+    degrees: bool = True,
+) -> NDArray_3xN | NDArray_3:
+    """Use `astropy.coordinates.WGS84GeodeticRepresentation` to transform from WGS84 to ITRS."""
+    ang_unit = units.deg if degrees else units.rad
 
-    if degrees:
-        lat, lon = np.radians(lat), np.radians(lon)
-
-    cord = EarthLocation.from_geodetic(
-        lon=lon * units.rad,
-        lat=lat * units.rad,
+    wgs_cord = coord.WGS84GeodeticRepresentation(
+        lon=lon * ang_unit,
+        lat=lat * ang_unit,
         height=alt * units.m,
-        ellipsoid=ellipsoid,
     )
-    x, y, z = cord.to_geocentric()
+    itrs_cord = coord.ITRS(wgs_cord)
 
-    pos = np.empty((3,), dtype=np.float64)
-
-    pos[0] = x.to(units.m).value
-    pos[1] = y.to(units.m).value
-    pos[2] = z.to(units.m).value
-
-    return pos
-
-
-def ITRS_to_geodetic(x, y, z, degrees=True, ellipsoid=None):
-    """Use `astropy.coordinates.EarthLocation` to transform from geodetic to ITRS.
-
-    x: X-coordinate in ITRS
-    y: Y-coordinate in ITRS
-    z: Z-coordinate in ITRS
-    :param bool radians: If :code:`True` then all values are given in radians instead of degrees.
-    :param str/None ellipsoid: Name of the ellipsoid model used for geodetic
-    coordinates, for default value see Astropy `EarthLocation`.
-    :rtype: numpy.ndarray
-    :return: (3,) array of longitude, latitude and height above ellipsoid
-    """
-    raise NotImplementedError()
-    # todo: replace this with astropy.coordinates.WGS84GeodeticRepresentation
-    # so that it can be vectorized - we never use any other ellipsoid anyway
-
-    cord = EarthLocation.from_geocentric(
-        x=x * units.m,
-        y=y * units.m,
-        z=z * units.m,
-    )
-    lon, lat, height = cord.to_geodetic(ellipsoid=ellipsoid)
-
-    llh = np.empty((3,), dtype=np.float64)
-
-    if degrees:
-        u_ = units.deg
+    if isinstance(lat, np.ndarray):
+        size = lat.size
     else:
-        u_ = units.rad
-    llh[0] = lat.to(u_).value
-    llh[1] = lon.to(u_).value
-    llh[2] = height.to(units.m).value
+        size = 0
 
-    return llh
+    shape: tuple[int, ...] = (6, size) if size > 0 else (6,)
+    state = np.empty(shape, dtype=np.float64)
+    state[:3, ...] = itrs_cord.cartesian.xyz.to(units.m).value
+    state[3:, ...] = itrs_cord.velocity.d_xyz.to(units.m / units.s).value
+
+    return state
+
+
+def ITRS_to_geodetic(
+    state: NDArray_3xN | NDArray_N,
+    degrees: bool = True,
+):
+    """Use `astropy.coordinates.WGS84GeodeticRepresentation` to transform from ITRS to WGS84."""
+    raise NotImplementedError()
+    # ang_unit = units.deg if degrees else units.rad
+    # astropy_states = _convert_to_astropy(state, coord.ITRS)
+    # wgs_cord = coord.WGS84GeodeticRepresentation(astropy_states)
+    #
+    # if isinstance(lat, np.ndarray):
+    #     size = lat.size
+    # else:
+    #     size = 0
+    #
+    # shape: tuple[int, ...] = (6, size) if size > 0 else (6,)
+    # state = np.empty(shape, dtype=np.float64)
+    # state[:3, ...] = itrs_cord.cartesian.xyz.to(units.m).value
+    # state[3:, ...] = itrs_cord.velocity.d_xyz.to(units.m / units.s).value
+    #
+    # return state
+    pass
