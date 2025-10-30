@@ -28,7 +28,7 @@ pytest:
     - uv python install $VERSION
     - uv venv --seed --python $VERSION ./venv
     - source venv/bin/activate
-    - pip install .[tests]
+    - pip install .[all,tests]
     - pytest
   rules:
     - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
@@ -40,7 +40,7 @@ mypy:
   stage: type_checking
   extends: .devsetup
   script:
-    - pip install .[tests]
+    - pip install .[all,tests]
     - mypy src/spacecoords --follow-untyped-imports --disallow-untyped-defs --warn-unused-ignores
   rules:
     - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
@@ -55,6 +55,7 @@ pages:
   stage: release
   extends: .devsetup
   script:
+    - pip install .[all,develop]
     - mkdocs build --site-dir public
   artifacts:
     paths:
@@ -71,7 +72,7 @@ pypi:
     #Use a gitlab variable to securely store the token
     PYPI_TOKEN: $PYPI_TOKEN
   script:
-    - pip install .[develop]
+    - pip install .[all,develop]
     - python -m build
     - python -m twine check dist/*
     - >
