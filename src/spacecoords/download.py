@@ -50,3 +50,10 @@ def naif_kernel(
             if progress:
                 print()
 
+
+def naif_kernel_main(args):
+    naif_kernel(
+        kernel_path=KERNEL_PATHS[args.kernel_type] + args.kernel_name,
+        output_file=args.output_file,
+        progress=True,
+    )

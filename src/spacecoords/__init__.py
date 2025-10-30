@@ -8,6 +8,7 @@ from .version import __version__
 
 from . import linalg
 from . import spherical
+from . import constants
 
 
 def _make_missing_module(name: str, dep: str):
@@ -23,19 +24,19 @@ def _make_missing_module(name: str, dep: str):
 
 # Optional modules
 if importlib.util.find_spec("astropy") is not None:
-    from . import astropy
+    from . import celestial
 else:
-    astropy = _make_missing_module("astropy", "astropy")
+    astropy = _make_missing_module("celestial", "astropy")
 
 if importlib.util.find_spec("jplephem") is not None:
-    from . import naif_ephemeris
+    from . import solarsystem_states
 else:
-    naif_ephemeris = _make_missing_module("naif_ephemeris", "jplephem")
+    naif_ephemeris = _make_missing_module("solarsystem_states", "jplephem")
 
-if importlib.util.find_spec("spiceypy") is not None:
-    from . import naif_spice
+if importlib.util.find_spec("spice") is not None:
+    from . import spice
 else:
-    naif_spice = _make_missing_module("naif_spice", "spiceypy")
+    naif_spice = _make_missing_module("spice", "spiceypy")
 
 if importlib.util.find_spec("requests") is not None:
     from . import download
