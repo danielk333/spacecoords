@@ -19,6 +19,7 @@ stages:
 ## Platforms testing ##
 
 pytest:
+  stage: test
   image: ghcr.io/astral-sh/uv:bookworm-slim
   allow_failure: true
   parallel:
