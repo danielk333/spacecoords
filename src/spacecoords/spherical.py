@@ -135,7 +135,7 @@ def az_el_to_sph(
 
 
 def az_el_point(
-    self, azimuth: NDArray_N | float, elevation: NDArray_N | float, degrees: bool = False
+    azimuth: NDArray_N | float, elevation: NDArray_N | float, degrees: bool = False
 ) -> NDArray_3xN | NDArray_3:
     """Point beam towards azimuth and elevation coordinate.
 
@@ -156,7 +156,6 @@ def az_el_point(
 
 
 def az_el_vs_cart_angle(
-    self,
     azimuth: NDArray_N | float,
     elevation: NDArray_N | float,
     cart: NDArray_3xN | NDArray_3,
