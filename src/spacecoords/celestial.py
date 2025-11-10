@@ -57,7 +57,7 @@ def get_solarsystem_body_state(
     ephemeris: str = "jpl",
 ) -> NDArray_6xN | NDArray_6:
     """
-    
+
     This is to not have to remember how to do this astropy config stuff
     # https://docs.astropy.org/en/stable/api/astropy.coordinates.solar_system_ephemeris.html
     """
@@ -205,22 +205,14 @@ def geodetic_to_ITRS(
 def ITRS_to_geodetic(
     state: NDArray_3xN | NDArray_N,
     degrees: bool = True,
-):
+) -> tuple[NDArray_N | float, NDArray_N | float, NDArray_N | float]:
     """Use `astropy.coordinates.WGS84GeodeticRepresentation` to transform from ITRS to WGS84."""
-    raise NotImplementedError()
-    # ang_unit = units.deg if degrees else units.rad
-    # astropy_states = _convert_to_astropy(state, coord.ITRS)
-    # wgs_cord = coord.WGS84GeodeticRepresentation(astropy_states)
-    #
-    # if isinstance(lat, np.ndarray):
-    #     size = lat.size
-    # else:
-    #     size = 0
-    #
-    # shape: tuple[int, ...] = (6, size) if size > 0 else (6,)
-    # state = np.empty(shape, dtype=np.float64)
-    # state[:3, ...] = itrs_cord.cartesian.xyz.to(units.m).value
-    # state[3:, ...] = itrs_cord.velocity.d_xyz.to(units.m / units.s).value
-    #
-    # return state
-    pass
+    ang_unit = units.deg if degrees else units.rad
+
+    itrs_cord = _convert_to_astropy(state, coord.ITRS, {})
+    wgs_cord = coord.WGS84GeodeticRepresentation(itrs_cord)
+    return (
+        wgs_cord.lat.to(ang_unit).value,
+        wgs_cord.lon.to(ang_unit).value,
+        wgs_cord.height.to(units.m).value,
+    )
