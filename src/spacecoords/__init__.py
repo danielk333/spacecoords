@@ -9,6 +9,7 @@ from .version import __version__
 from . import linalg
 from . import spherical
 from . import constants
+from . import projection
 
 
 def _make_missing_module(name: str, dep: str):
