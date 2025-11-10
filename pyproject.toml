@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spacecoords"
-version = "0.1.1"
+version = "0.1.2"
 description = "A collection of coordinate transforms for convenient use"
 readme = { file = "README.md", content-type = "text/markdown" }
 authors = [{ name = "Daniel Kastinen", email = "daniel.kastinen@irf.se" }]
