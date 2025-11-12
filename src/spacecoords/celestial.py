@@ -197,7 +197,7 @@ def geodetic_to_ITRS(
     shape: tuple[int, ...] = (6, size) if size > 0 else (6,)
     state = np.empty(shape, dtype=np.float64)
     state[:3, ...] = itrs_cord.cartesian.xyz.to(units.m).value
-    state[3:, ...] = itrs_cord.velocity.d_xyz.to(units.m / units.s).value
+    # state[3:, ...] = itrs_cord.velocity.d_xyz.to(units.m / units.s).value
 
     return state
 
