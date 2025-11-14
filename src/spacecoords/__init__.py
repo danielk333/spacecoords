@@ -27,17 +27,17 @@ def _make_missing_module(name: str, dep: str):
 if importlib.util.find_spec("astropy") is not None:
     from . import celestial
 else:
-    astropy = _make_missing_module("celestial", "astropy")
+    celestial = _make_missing_module("celestial", "astropy")
 
 if importlib.util.find_spec("jplephem") is not None:
     from . import spk_basic
 else:
-    naif_ephemeris = _make_missing_module("spk_basic", "jplephem")
+    spk_basic = _make_missing_module("spk_basic", "jplephem")
 
 if importlib.util.find_spec("spice") is not None:
     from . import spice
 else:
-    naif_spice = _make_missing_module("spice", "spiceypy")
+    spice = _make_missing_module("spice", "spiceypy")
 
 if importlib.util.find_spec("requests") is not None:
     from . import download
