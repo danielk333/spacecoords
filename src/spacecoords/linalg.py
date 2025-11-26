@@ -7,6 +7,7 @@ import numpy.typing as npt
 from .types import (
     NDArray_3,
     NDArray_3xN,
+    NDArray_Nx3,
     NDArray_N,
     NDArray_3x3,
     NDArray_3x3xN,
@@ -278,3 +279,58 @@ def vec_to_vec(vec_in: NDArray_N, vec_out: NDArray_N) -> NDArray_NxN:
     R = F @ G @ np.linalg.inv(F)
 
     return R
+
+
+def line_triangulation_system(directions: NDArray_3xN, points: NDArray_3xN) -> tuple[NDArray_Nx3, NDArray_N]:
+    """Calculate the linear system for finding the point closest to N lines.
+
+    Denote a point on the line $i$ as $\\mathbf{a}_i$,
+    the normalized line direction as $\\mathbf{d}_i$,
+    and the point to be solved for as $\\mathbf{p}$.
+    Then, to solve for the point $\\mathbf{p}$ that is closest to all lines,
+    we start from the sum squared distance to all lines from this point
+
+    $$
+        D = \\sum_{i}^N | \\mathbf{d}_i \\cross (\\mathbf{a}_i - \\mathbf{p}) |^2.
+    $$
+
+    Solving $\\nabla D = \\mathbf{0}$ yilds an equation system of the form
+    $ M \\mathbf{x} = \\mathbf{b} $.
+
+    This function computes $M$ and $\\mathbf{b}$.
+    """
+    M = np.zeros((3, 3))
+    b = np.zeros((3,))
+    Im = np.eye(3)
+
+    for ind in range(directions.shape[1]):
+        d = directions[:, ind]
+        a = points[:, ind]
+        da = np.dot(d, a)
+
+        M += np.outer(d, d) - Im
+        b += da * d - a
+
+    return M, b
+
+
+def solve_line_triangulation(directions: NDArray_3xN, points: NDArray_3xN) -> NDArray_3:
+    """Compute the linear system for finding the point closest to N lines
+    and solve that system.
+
+    Parameters
+    ----------
+    directions
+        array of normalized line directions
+    points
+        array of points on the lines
+
+    Returns
+    -------
+        The position vector closest to all input lines.
+
+    """
+    system_mat, system_result = line_triangulation_system(directions, points)
+    closest_point = np.linalg.solve(system_mat, system_result)
+
+    return closest_point

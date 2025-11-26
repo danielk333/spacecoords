@@ -19,6 +19,9 @@ NDArray_6 = npt.NDArray
 NDArray_3xN = npt.NDArray
 "(3,n) shaped ndarray"
 
+NDArray_Nx3 = npt.NDArray
+"(n, 3) shaped ndarray"
+
 NDArray_6xN = npt.NDArray
 "(6,n) shaped ndarray"
 
