@@ -281,7 +281,10 @@ def vec_to_vec(vec_in: NDArray_N, vec_out: NDArray_N) -> NDArray_NxN:
     return R
 
 
-def line_triangulation_system(directions: NDArray_3xN, points: NDArray_3xN) -> tuple[NDArray_Nx3, NDArray_N]:
+def triangulation_system(
+    directions: NDArray_3xN,
+    points: NDArray_3xN,
+) -> tuple[NDArray_Nx3, NDArray_N]:
     """Calculate the linear system for finding the point closest to N lines.
 
     Denote a point on the line $i$ as $\\mathbf{a}_i$,
@@ -314,23 +317,14 @@ def line_triangulation_system(directions: NDArray_3xN, points: NDArray_3xN) -> t
     return M, b
 
 
-def solve_line_triangulation(directions: NDArray_3xN, points: NDArray_3xN) -> NDArray_3:
-    """Compute the linear system for finding the point closest to N lines
-    and solve that system.
-
-    Parameters
-    ----------
-    directions
-        array of normalized line directions
-    points
-        array of points on the lines
-
-    Returns
-    -------
-        The position vector closest to all input lines.
-
-    """
-    system_mat, system_result = line_triangulation_system(directions, points)
-    closest_point = np.linalg.solve(system_mat, system_result)
-
-    return closest_point
+def trilateration_system(
+    ranges: NDArray_N,
+    points: NDArray_3xN,
+) -> tuple[NDArray_Nx3, NDArray_N]:
+    """Calculate the linear system for finding the point closest to the intersection of N spheres."""
+    r2 = ranges**2
+    s2 = np.sum(points**2, axis=0)
+    b = (r2 - np.mean(r2)) - (s2 - np.mean(s2))
+    points_mean = np.mean(points, axis=1)
+    M = 2 * (points_mean[:, None] - points).T
+    return M, b
