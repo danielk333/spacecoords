@@ -88,7 +88,7 @@ def convert(
     states: NDArray_6xN,
     in_frame: str,
     out_frame: str,
-    frame_kwargs: dict[str, Any],
+    frame_kwargs: dict[str, Any] | None = None,
 ) -> NDArray_6xN:
     """Perform predefined coordinate transformations using Astropy.
     Always returns a copy of the array.
@@ -117,6 +117,8 @@ def convert(
 
     in_frame = in_frame.upper()
     out_frame = out_frame.upper()
+    if frame_kwargs is None:
+        frame_kwargs = {}
 
     if in_frame == out_frame:
         return states.copy()
