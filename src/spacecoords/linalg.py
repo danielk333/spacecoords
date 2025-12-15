@@ -16,6 +16,7 @@ from .types import (
 )
 
 
+# TODO: move to sph, this is in wrong module
 def great_circle_distance(
     elevation_a: NDArray_N | float,
     azimuth_a: NDArray_N | float,
