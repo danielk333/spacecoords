@@ -16,6 +16,32 @@ from .types import (
 )
 
 
+def great_circle_distance(
+    elevation_a: NDArray_N | float,
+    azimuth_a: NDArray_N | float,
+    elevation_b: NDArray_N | float,
+    azimuth_b: NDArray_N | float,
+    degrees: bool = False,
+) -> NDArray_N | float:
+    """Calculate the great circle distance between two spherical points in terms of angular
+    separation.
+    """
+    if degrees:
+        elevation_a = np.radians(elevation_a)
+        elevation_b = np.radians(elevation_b)
+        azimuth_a = np.radians(azimuth_a)
+        azimuth_b = np.radians(azimuth_b)
+
+    x1 = np.sin(elevation_a) * np.sin(elevation_b)
+    x2 = np.cos(elevation_a) * np.cos(elevation_b)
+
+    angle_sep = np.arccos(x1 + x2 * np.cos(np.abs(azimuth_a - azimuth_b)))
+
+    if degrees:
+        angle_sep = np.degrees(angle_sep)
+    return angle_sep
+
+
 def vector_angle(
     a: NDArray_3 | NDArray_3xN, b: NDArray_3 | NDArray_3xN, degrees: bool = False
 ) -> NDArray_N | float:
