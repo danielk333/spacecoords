@@ -34,7 +34,7 @@ if importlib.util.find_spec("jplephem") is not None:
 else:
     spk_basic = _make_missing_module("spk_basic", "jplephem")
 
-if importlib.util.find_spec("spice") is not None:
+if importlib.util.find_spec("spiceypy") is not None:
     from . import spice
 else:
     spice = _make_missing_module("spice", "spiceypy")
