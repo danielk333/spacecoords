@@ -41,8 +41,19 @@ mypy:
   stage: type_checking
   extends: .devsetup
   script:
-    - pip install .[all,tests]
+    - pip install .[all,type_checker]
     - mypy src/spacecoords --follow-untyped-imports --disallow-untyped-defs --warn-unused-ignores
+  rules:
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
+    - if: $CI_COMMIT_BRANCH == "main"
+
+cyclomatic-complexity:
+  stage: type_checking
+  extends: .devsetup
+  script:
+    - pip install .[all,type_checker]
+    - xenon src/spacecoords/ -m C -a A # Average of a file (-m): max C, Total average (-a): max A
   rules:
     - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
     - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"

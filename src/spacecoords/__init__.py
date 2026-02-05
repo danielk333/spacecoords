@@ -10,11 +10,12 @@ from . import linalg
 from . import spherical
 from . import constants
 from . import projection
+from . import interpolation
 
 
-def _make_missing_module(name: str, dep: str):
+def _make_missing_module(name: str, dep: str) -> ModuleType:
     class _MissingModule(ModuleType):
-        def __getattr__(self, key):
+        def __getattr__(self, key: str) -> None:
             raise ImportError(
                 f"The optional dependency `{dep}` for is missing.\n"
                 f"Install it with `pip install spacecoords[all]` or `pip install {dep}`."

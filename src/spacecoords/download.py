@@ -2,6 +2,7 @@ import sys
 import os
 from pathlib import Path
 import requests
+import argparse
 
 NAIF_URL = "https://naif.jpl.nasa.gov/pub/naif/"
 
@@ -15,7 +16,7 @@ def naif_kernel(
     output_file: Path,
     progress: bool = True,
     chunk_size: int = 8192,
-):
+) -> None:
     url = NAIF_URL + kernel_path
     with requests.get(url, stream=True) as r:
         r.raise_for_status()
@@ -51,7 +52,7 @@ def naif_kernel(
                 print()
 
 
-def naif_kernel_main(args):
+def naif_kernel_main(args: argparse.Namespace) -> None:
     naif_kernel(
         kernel_path=KERNEL_PATHS[args.kernel_type] + args.kernel_name,
         output_file=args.output_file,

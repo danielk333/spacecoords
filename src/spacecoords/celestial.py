@@ -214,7 +214,7 @@ def ITRS_to_geodetic(
     itrs_cord = _convert_to_astropy(state, coord.ITRS, {})
     wgs_cord = coord.WGS84GeodeticRepresentation(itrs_cord)
     return (
-        wgs_cord.lat.to(ang_unit).value,
-        wgs_cord.lon.to(ang_unit).value,
-        wgs_cord.height.to(units.m).value,
+        wgs_cord.lat.to(ang_unit).value,  # type: ignore[attr-defined]
+        wgs_cord.lon.to(ang_unit).value,  # type: ignore[attr-defined]
+        wgs_cord.height.to(units.m).value,  # type: ignore[attr-defined]
     )
