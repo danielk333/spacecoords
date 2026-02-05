@@ -1,7 +1,7 @@
 import argparse
 
 
-def main():
+def main() -> None:
     import spacecoords as sc
 
     parser = argparse.ArgumentParser(description="Download files")

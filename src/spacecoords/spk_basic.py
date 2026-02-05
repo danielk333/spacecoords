@@ -1,6 +1,10 @@
 from collections import OrderedDict
 import numpy as np
+import numpy.typing as npt
 from jplephem.spk import SPK
+from astropy.time import Time
+from pathlib import Path
+from typing import Optional
 
 """Mapping from body name to integer id's used by the kernels.
 
@@ -24,7 +28,9 @@ BODY_NAME_TO_KERNEL_SPEC = OrderedDict(
 )
 
 
-def get_solarsystem_body_states(bodies, epoch, kernel, units=None):
+def get_solarsystem_body_states(
+    bodies: list[str], epoch: Time, kernel: str, units: Optional[list] = None
+) -> dict[str, npt.NDArray[np.float64]]:
     """Open a kernel file and get the statates of the given bodies at epoch in ICRS.
 
     Note: All outputs from kernel computations are in the Barycentric (ICRS) "eternal" frame.
@@ -32,7 +38,7 @@ def get_solarsystem_body_states(bodies, epoch, kernel, units=None):
     assert SPK is not None, "jplephem package needed to directly interact with kernels"
     states = {}
 
-    kernel = SPK.open(kernel)
+    kernel_spk = SPK.open(kernel)
 
     epoch_ = epoch.tdb  # jplephem uses Barycentric Dynamical Time (TDB)
     jd1, jd2 = epoch_.jd1, epoch_.jd2
@@ -48,7 +54,7 @@ def get_solarsystem_body_states(bodies, epoch, kernel, units=None):
         # if there are multiple steps to go from states to
         # ICRS barycentric, iterate trough and combine
         for pair in BODY_NAME_TO_KERNEL_SPEC[body_]:
-            spk = kernel[pair]
+            spk = kernel_spk[pair]
             if spk.data_type == 3:
                 # Type 3 kernels contain both position and velocity.
                 posvel = spk.compute(jd1, jd2).flatten()
