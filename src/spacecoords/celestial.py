@@ -50,7 +50,7 @@ ASTROPY_NOT_OBSTIME = [
 ]
 
 
-def get_solarsystem_body_state(
+def astropy_get_body(
     body: str,
     time: Time,
     kernel_dir: Path,
@@ -62,13 +62,12 @@ def get_solarsystem_body_state(
     # https://docs.astropy.org/en/stable/api/astropy.coordinates.solar_system_ephemeris.html
     """
     with config.set_temp_cache(path=str(kernel_dir), delete=False):
-        pos, vel = coord.get_body_barycentric_posvel(body, time, ephemeris=ephemeris)
+        pos, vel = coord.get_body_barycentric_posvel(body, time, ephemeris=ephemeris, get_velocity=True)
 
-    size = len(time)
-    shape: tuple[int, ...] = (6, size) if size > 0 else (6,)
+    shape: tuple[int, ...] = (6, time.size) if time.size > 0 else (6,)
     state = np.empty(shape, dtype=np.float64)
     state[:3, ...] = pos.xyz.to(units.m).value
-    state[3:, ...] = vel.d_xyz.to(units.m / units.s).value
+    state[3:, ...] = vel.xyz.to(units.m / units.s).value
     return state
 
 
