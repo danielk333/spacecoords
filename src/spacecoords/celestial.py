@@ -189,18 +189,7 @@ def geodetic_to_ITRS(
         height=alt * units.m,
     )
     itrs_cord = coord.ITRS(wgs_cord)
-
-    if isinstance(lat, np.ndarray):
-        size = lat.size
-    else:
-        size = 0
-
-    shape: tuple[int, ...] = (6, size) if size > 0 else (6,)
-    state = np.empty(shape, dtype=np.float64)
-    state[:3, ...] = itrs_cord.cartesian.xyz.to(units.m).value
-    # state[3:, ...] = itrs_cord.velocity.d_xyz.to(units.m / units.s).value
-
-    return state
+    return itrs_cord.cartesian.xyz.to(units.m).value
 
 
 def ITRS_to_geodetic(
