@@ -111,11 +111,14 @@ class ECEFRelatedFuncs(unittest.TestCase):
         x_ref = frames.ecef_to_enu(lat, lon, g, degrees=True)
         nt.assert_array_almost_equal(x_ref, x, decimal=dec)
 
-    def test_enu_to_ecef_pre_calc(self):
-        raise NotImplementedError()
-
-    def test_azel_to_ecef_pre_calc(self):
-        raise NotImplementedError()
-
-    def test_ecef_to_enu_to_ecef(self):
-        raise NotImplementedError()
+    def test_azel_to_ecef(self):
+        lat, lon = 90.0, 0.0
+        pt = frames.azel_to_ecef(
+            lat = lat,
+            lon = lon,
+            az = 0.0,
+            el = 90.0,
+            degrees = True,
+        )
+        pt_ref = np.array([0.0, 0.0, 1.0])
+        nt.assert_array_almost_equal(pt_ref, pt, decimal=3)
