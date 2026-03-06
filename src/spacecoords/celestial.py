@@ -3,6 +3,7 @@
 """Coordinate frame transformations and related functions.
 Main usage is the `convert` function that wraps Astropy frame transformations.
 """
+
 from typing import Type, Any
 from pathlib import Path
 import numpy as np
@@ -56,15 +57,18 @@ def astropy_get_body(
     kernel_dir: Path,
     ephemeris: str = "jpl",
 ) -> NDArray_6xN | NDArray_6:
-    """
+    """Astropy get body wrapper.
 
     This is to not have to remember how to do this astropy config stuff
     # https://docs.astropy.org/en/stable/api/astropy.coordinates.solar_system_ephemeris.html
+
+    and also have a local directory that is different from the standard astropy cache configured
+    inside a single function
     """
     with config.set_temp_cache(path=str(kernel_dir), delete=False):
-        pos, vel = coord.get_body_barycentric_posvel(body, time, ephemeris=ephemeris, get_velocity=True)
+        pos, vel = coord.get_body_barycentric_posvel(body, time, ephemeris=ephemeris)
 
-    shape: tuple[int, ...] = (6, time.size) if time.size > 0 else (6,)
+    shape: tuple[int, ...] = (6, time.size) if time.size > 1 else (6,)
     state = np.empty(shape, dtype=np.float64)
     state[:3, ...] = pos.xyz.to(units.m).value
     state[3:, ...] = vel.xyz.to(units.m / units.s).value
@@ -163,6 +167,16 @@ def convert(
     return rets
 
 
+def _convert_to_astropy_3d(
+    states: NDArray_3xN | NDArray_3,
+    frame: Type[T],
+    frame_kwargs: dict[str, Any],
+) -> T:
+    state_p = coord.CartesianRepresentation(states[:3, ...] * units.m)
+    astropy_states = frame(state_p, **frame_kwargs)  # type: ignore
+    return astropy_states
+
+
 def _convert_to_astropy(
     states: NDArray_6xN | NDArray_6,
     frame: Type[T],
@@ -199,8 +213,8 @@ def ITRS_to_geodetic(
     """Use `astropy.coordinates.WGS84GeodeticRepresentation` to transform from ITRS to WGS84."""
     ang_unit = units.deg if degrees else units.rad
 
-    itrs_cord = _convert_to_astropy(state, coord.ITRS, {})
-    wgs_cord = coord.WGS84GeodeticRepresentation(itrs_cord)
+    itrs_cord = _convert_to_astropy_3d(state, coord.ITRS, {})
+    wgs_cord = coord.EarthLocation.from_geocentric(itrs_cord.x, itrs_cord.y, itrs_cord.z)
     return (
         wgs_cord.lat.to(ang_unit).value,  # type: ignore[attr-defined]
         wgs_cord.lon.to(ang_unit).value,  # type: ignore[attr-defined]
