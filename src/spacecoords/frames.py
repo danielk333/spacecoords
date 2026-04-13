@@ -165,10 +165,10 @@ def ecef_to_enu(
 
     mx = np.array(
         [
-            [-np.sin(lon), -np.sin(lat) * np.cos(lon), np.cos(lat) * np.cos(lon)],
-            [np.cos(lon), -np.sin(lat) * np.sin(lon), np.cos(lat) * np.sin(lon)],
-            [0, np.cos(lat), np.sin(lat)],
+            [-np.sin(lon), np.cos(lat), 0],
+            [-np.cos(lon) * np.sin(lat), -np.sin(lat) * np.sin(lon), np.cos(lat)],
+            [np.cos(lat) * np.cos(lon), np.sin(lon) * np.cos(lat), np.sin(lat)],
         ]
     )
-    enu = np.dot(np.linalg.inv(mx), ecef)
+    enu = np.dot(mx, ecef)
     return enu
