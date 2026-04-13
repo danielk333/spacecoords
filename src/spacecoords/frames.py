@@ -103,8 +103,8 @@ def enu_to_ecef(
     enu: NDArray_3 | NDArray_3xN,
     degrees: bool = False,
 ) -> NDArray_3xN | NDArray_3:
-    """Rotate ENU (east/north/up) using geocentric zenith to ECEF coordinate system,
-    not including translation.
+    """Rotate ENU (east/north/up) using geocentric latitude and longitude (and zenith)
+    to ECEF coordinate system, not including translation.
 
     Parameters
     ----------
@@ -143,7 +143,7 @@ def ecef_to_enu(
     degrees: bool = False,
 ) -> NDArray_3xN | NDArray_3:
     """Rotate ECEF coordinate system to local ENU (east,north,up) using geocentric
-    zenith, not including translation.
+    latitude and longitude (and zenith), not including translation.
 
     Parameters
     ----------

@@ -8,6 +8,16 @@ from spacecoords import constants
 
 class TestFrames(unittest.TestCase):
 
+    def test_geodetic_to_geocentric_lla(self):
+        lat, lon, alt = 67.1, 20.5, 420.0
+        latg, long, altg = celestial.geodetic_lla_to_geocentric_lla(lat, lon, alt, degrees=True)
+        lat0, lon0, alt0 = celestial.geocentric_lla_to_geodetic_lla(latg, long, altg, degrees=True)
+
+        dec = 3
+        nt.assert_almost_equal(lat, lat0, decimal=dec)
+        nt.assert_almost_equal(lon, lon0, decimal=dec)
+        nt.assert_almost_equal(alt, alt0, decimal=dec)
+
     def test_geodetic_to_ITRS(self):
         dec = 3
         x = celestial.geodetic_to_ITRS(90.0, 0.0, 0.0, degrees=True)

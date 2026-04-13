@@ -12,6 +12,8 @@ import astropy.coordinates as coord
 import astropy.units as units
 import astropy.config as config
 
+from .spherical import cart_to_sph, sph_to_cart
+
 from .types import (
     NDArray_N,
     NDArray_3,
@@ -220,3 +222,37 @@ def ITRS_to_geodetic(
         wgs_cord.lon.to(ang_unit).value,  # type: ignore[attr-defined]
         wgs_cord.height.to(units.m).value,  # type: ignore[attr-defined]
     )
+
+
+def geodetic_lla_to_geocentric_lla(
+    lat: NDArray_N | float,
+    lon: NDArray_N | float,
+    alt: NDArray_N | float,
+    degrees: bool = True,
+) -> tuple[NDArray_N | float, NDArray_N | float, NDArray_N | float]:
+    """Convert from geodetic latitude, longitude, altitude to geocentric latitude, longtiude,
+    altitude using WGS84. Geocentric "Altitude" here is relative Earth center.
+    """
+    half_circ = 180 if degrees else np.pi
+
+    itrs_pos = geodetic_to_ITRS(lat, lon, alt, degrees=degrees)
+    sph_geoc = cart_to_sph(itrs_pos, degrees=degrees)
+    sph_geoc[0, ...] = half_circ / 2 - sph_geoc[0, ...]
+    return sph_geoc[1, ...], sph_geoc[0, ...], sph_geoc[2, ...]
+
+
+def geocentric_lla_to_geodetic_lla(
+    lat: NDArray_N | float,
+    lon: NDArray_N | float,
+    alt: NDArray_N | float,
+    degrees: bool = True,
+) -> tuple[NDArray_N | float, NDArray_N | float, NDArray_N | float]:
+    """Convert from geodetic latitude, longitude, altitude to geocentric latitude, longtiude,
+    altitude using WGS84. Geocentric "Altitude" here is relative Earth center.
+    """
+    half_circ = 180 if degrees else np.pi
+
+    sph_geoc = np.stack([lon, lat, alt], axis=0)
+    sph_geoc[0, ...] = half_circ / 2 - sph_geoc[0, ...]
+    itrs_pos = sph_to_cart(sph_geoc, degrees=degrees)
+    return ITRS_to_geodetic(itrs_pos, degrees=degrees)
