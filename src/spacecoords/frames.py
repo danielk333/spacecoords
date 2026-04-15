@@ -9,6 +9,9 @@ from .types import (
     NDArray_3,
     NDArray_3xN,
 )
+from .constants import WGS84
+
+WGS84_POLE_LIMIT = 1e-9
 
 
 def ned_to_ecef(
@@ -172,3 +175,106 @@ def ecef_to_enu(
     )
     enu = np.dot(mx, ecef)
     return enu
+
+
+def geodetic_wgs84_to_ecef(
+    lat: NDArray_N | float,
+    lon: NDArray_N | float,
+    alt: NDArray_N | float,
+    degrees: bool = False,
+) -> NDArray_3xN | NDArray_3:
+    """Convert WGS84 geodetic coordinates to ECEF coordinates with custom implementation [^1].
+
+    [^1]: J. Zhu, "Conversion of Earth-centered Earth-fixed coordinates to geodetic coordinates,"
+        IEEE Transactions on Aerospace and Electronic Systems, vol. 30, pp. 957-961, 1994.
+
+    Returns
+    -------
+        (3,) or (3,n) array x, y and z coordinates in ECEF.
+
+    """
+    if degrees:
+        lat, lon = np.radians(lat), np.radians(lon)
+    xi = np.sqrt(1 - WGS84.esq * np.sin(lat) ** 2)
+    x = (WGS84.a / xi + alt) * np.cos(lat) * np.cos(lon)
+    y = (WGS84.a / xi + alt) * np.cos(lat) * np.sin(lon)
+    z = (WGS84.a / xi * (1 - WGS84.esq) + alt) * np.sin(lat)
+
+    return np.array([x, y, z])
+
+
+def ecef_to_geodetic_wgs84(
+    x: NDArray_N | float,
+    y: NDArray_N | float,
+    z: NDArray_N | float,
+    degrees: bool = False,
+) -> NDArray_3xN | NDArray_3:
+    """Convert ECEF coordinates to WGS84 geodetic coordinates with custom implementation [^1].
+
+    [^1]: J. Zhu, "Conversion of Earth-centered Earth-fixed coordinates to geodetic coordinates,"
+        IEEE Transactions on Aerospace and Electronic Systems, vol. 30, pp. 957-961, 1994.
+
+    Parameters
+    ----------
+    x
+        Position along prime meridian [m]
+    y
+        Position along prime meridian + 90 degrees [m]
+    z
+        Position along earth rotation axis [m]
+
+    Returns
+    -------
+    numpy.ndarray
+        (3,) or (3,n) array lat [deg], lon [deg], alt [m] coordinates in WGS84 geodetic coordinates.
+
+    """
+    xyz_len = x.size if isinstance(x, np.ndarray) else None
+
+    if xyz_len is None:
+        assert (
+            isinstance(x, float) and isinstance(y, float) and isinstance(z, float)
+        ), "all inputs must be float or arrays of same size"
+    else:
+        assert x.size == y.size and x.size == z.size, "all inputs must be float or arrays of same size"  # type: ignore
+
+    shape = (3, xyz_len) if xyz_len is not None else (3, 1)
+    xyz = np.empty(shape, dtype=np.float64)
+    lla = np.empty(shape, dtype=np.float64)
+    xyz[0, :] = x
+    xyz[1, :] = y
+    xyz[2, :] = z
+
+    r = np.sqrt(xyz[0, :] * xyz[0, :] + xyz[1, :] * xyz[1, :])
+    sel = r > WGS84_POLE_LIMIT
+    not_sel = np.logical_not(sel)
+
+    lla[0, not_sel] = np.sign(xyz[2, not_sel]) * np.pi / 2
+    lla[1, not_sel] = 0.0
+    lla[2, not_sel] = np.abs(xyz[2, not_sel]) - WGS84.b
+
+    Esq = WGS84.a * WGS84.a - WGS84.b * WGS84.b
+    F = 54 * WGS84.b * WGS84.b * xyz[2, sel] * xyz[2, sel]
+    G = r[sel]  * r[sel]  + (1 - WGS84.esq) * xyz[2, sel] * xyz[2, sel] - WGS84.esq * Esq
+    C = (WGS84.esq * WGS84.esq * F * r[sel]  * r[sel] ) / (np.power(G, 3))
+    S = np.cbrt(1 + C + np.sqrt(C * C + 2 * C))
+    P = F / (3 * np.power((S + 1 / S + 1), 2) * G * G)
+    Q = np.sqrt(1 + 2 * WGS84.esq * WGS84.esq * P)
+    r_0 = -(P * WGS84.esq * r[sel] ) / (1 + Q) + np.sqrt(
+        0.5 * WGS84.a * WGS84.a * (1 + 1.0 / Q)
+        - P * (1 - WGS84.esq) * xyz[2, sel] * xyz[2, sel] / (Q * (1 + Q))
+        - 0.5 * P * r[sel]  * r[sel] 
+    )
+    U = np.sqrt(np.power((r[sel]  - WGS84.esq * r_0), 2) + xyz[2, sel] * xyz[2, sel])
+    V = np.sqrt(np.power((r[sel]  - WGS84.esq * r_0), 2) + (1 - WGS84.esq) * xyz[2, sel] * xyz[2, sel])
+    Z_0 = WGS84.b * WGS84.b * xyz[2, sel] / (WGS84.a * V)
+    lla[0, sel] = np.arctan((xyz[2, sel] + WGS84.e1sq * Z_0) / r[sel] )
+    lla[1, sel] = np.arctan2(xyz[1, sel], xyz[0, sel])
+    lla[2, sel] = U * (1 - WGS84.b * WGS84.b / (WGS84.a * V))
+
+    if degrees:
+        lla[:2, :] = np.degrees(lla[:2, :])
+    if xyz_len is None:
+        lla = lla[:, 0]  # type: ignore
+
+    return lla

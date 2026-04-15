@@ -1,4 +1,5 @@
 import numpy as np
+import timeit
 from spacecoords import celestial
 from spacecoords import frames
 import matplotlib.pyplot as plt
@@ -6,7 +7,35 @@ import matplotlib.pyplot as plt
 lat = 67 + 50 / 60 + 26.6 / 3600
 lon = 20 + 24 / 60 + 40.0 / 3600
 alt = 425
+# Using astropy implementation
 loc_itrs = celestial.geodetic_to_ITRS(lat, lon, alt, degrees=True)
+
+# Using internal WGS84 implementation
+loc_itrs_2 = frames.geodetic_wgs84_to_ecef(lat, lon, alt, degrees=True)
+
+print(f"implementation diff = {loc_itrs - loc_itrs_2}")
+t_astropy = timeit.timeit(
+    lambda: celestial.geodetic_to_ITRS(lat, lon, alt, degrees=True),
+    number=10_000,
+)
+t_own = timeit.timeit(
+    lambda: frames.geodetic_wgs84_to_ecef(lat, lon, alt, degrees=True),
+    number=10_000,
+)
+print(f"{t_astropy=:.2e} s vs {t_own=:.2e} s ({t_astropy / t_own} faster)")
+
+latm = np.linspace(-10, 10, 100)
+lonm = np.ones_like(latm)
+altm = 425 * np.ones_like(latm)
+t_astropy_vector = timeit.timeit(
+    lambda: celestial.geodetic_to_ITRS(latm, lonm, altm, degrees=True),
+    number=1_000,
+)
+t_own_vector = timeit.timeit(
+    lambda: frames.geodetic_wgs84_to_ecef(latm, lonm, altm, degrees=True),
+    number=1_000,
+)
+print(f"{t_astropy_vector=:.2e} s vs {t_own_vector=:.2e} s ({t_astropy / t_own} faster)")
 
 enu = np.array([0, 10e3, 100e3], dtype=np.float64)
 r_enu = np.linalg.norm(enu)

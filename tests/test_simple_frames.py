@@ -11,6 +11,9 @@ from spacecoords import frames
 
 class ECEFRelatedFuncs(unittest.TestCase):
 
+    def test_wgs84_to_ecef(self):
+        frames.ecef_to_geodetic_wgs84
+
     def test_ned_to_ecef_pre_calc(self):
         dec = 3
 
