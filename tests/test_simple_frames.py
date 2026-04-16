@@ -11,9 +11,6 @@ from spacecoords import frames
 
 class ECEFRelatedFuncs(unittest.TestCase):
 
-    def test_wgs84_to_ecef(self):
-        frames.ecef_to_geodetic_wgs84
-
     def test_ned_to_ecef_pre_calc(self):
         dec = 3
 
@@ -118,6 +115,10 @@ class ECEFRelatedFuncs(unittest.TestCase):
         x = np.array([20, 10.0, np.sqrt(2.0)])
         g = frames.enu_to_ecef(lat, lon, x, degrees=True)
         x_ref = frames.ecef_to_enu(lat, lon, g, degrees=True)
+        nt.assert_array_almost_equal(x_ref, x, decimal=dec)
+
+        g = frames.ecef_to_enu(lat, lon, x, degrees=True)
+        x_ref = frames.enu_to_ecef(lat, lon, g, degrees=True)
         nt.assert_array_almost_equal(x_ref, x, decimal=dec)
 
     def test_azel_to_ecef(self):
