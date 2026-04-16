@@ -10,14 +10,18 @@ from typing import Optional
 
 
 class Interpolator(ABC):
-    """Base Interpolation class that mimics the behavior of :code:`SpaceObject` so that a `Interpolator` instance can be used instead.
+    """Base Interpolation class for interpolating high dimensional temporal data-sets.
 
-    To create a Interpolator one must define the :code:`get_state` method. to return interpolated
+    To create a Interpolator one must define the `get_state` method. to return interpolated
     This method should return states based on the data contained in the instance.
     This data is preferably internalized at instantiation.
 
-    :param numpy.ndarray states: (6,n) array of states to interpolate between.
-    :param numpy.ndarray t: (n,) vector of times corresponding to the states.
+    Parameters
+    ----------
+    states
+        (6,n) array of states to interpolate between.
+    t
+        (n,) vector of times corresponding to the states.
     """
 
     def __init__(self, states: npt.NDArray, t: npt.NDArray) -> None:
@@ -71,19 +75,27 @@ def legendre8(
 
     Code adapted from the `gdar` system developed by NORCE Norwegian Research Centre AS, used with permission.
 
-    Parameters:
-      table: M vectors (M >= 9) to interpolate between, each containing N
-          values, e.g. for a position vector N=3 (x, y, z) table.shape = (M, N)
-      t1: time corresponding to M=0
-      tN: time corresponding to M=N-1
-      t: times at which to provide N-dimensional answer.
-      ti: indices which sort t in monotonic order
+    This version requires t to be sorted, which enables optimization
+    by interpolating all t in an interval between two nodes as a single
+    expression. For the typical case where there are many fewer intervals
+    to consider than distinct values to interpolate, this gives much
+    improved performance.
 
-      This version requires t to be sorted, which enables optimization
-      by interpolating all t in an interval between two nodes as a single
-      expression. For the typical case where there are many fewer intervals
-      to consider than distinct values to interpolate, this gives much
-      improved performance."""
+    Parameters
+    ----------
+    table
+        M vectors (M >= 9) to interpolate between, each containing N
+        values, e.g. for a position vector N=3 (x, y, z) table.shape = (M, N)
+    t1
+        time corresponding to M=0
+    tN
+        time corresponding to M=N-1
+    t
+        times at which to provide N-dimensional answer.
+    ti
+        indices which sort t in monotonic order
+
+    """
 
     M, N = table.shape
     t = np.atleast_1d(t)
@@ -136,15 +148,22 @@ def legendre8_loop(table: npt.NDArray, t1: int | float, tN: int | float, t: npt.
 
     Code adapted from the `gdar` system developed by NORCE Norwegian Research Centre AS, used with permission.
 
-    Parameters:
-      table: M vectors (M >= 9) to interpolate between, each containing N
-          values, e.g. for a position vector N=3 (x, y, z) table.shape = (M, N)
-      t1: time corresponding to M=0
-      tN: time corresponding to M=N-1
-      t: times at which to provide N-dimensional answer.
+    This version loops over all interpolation instants t.
+    Direct port of IDL, which was directly ported from Fortran.
 
-      This version loops over all interpolation instants t.
-      Direct port of IDL, which was directly ported from Fortran."""
+    Parameters
+    ----------
+    table
+        M vectors (M >= 9) to interpolate between, each containing N
+        values, e.g. for a position vector N=3 (x, y, z) table.shape = (M, N)
+    t1
+        time corresponding to M=0
+    tN
+        time corresponding to M=N-1
+    t
+        times at which to provide N-dimensional answer.
+
+    """
 
     # Return value: shape (P, N)
     M, N = table.shape
