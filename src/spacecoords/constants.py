@@ -32,10 +32,28 @@ class WGS84:
     """float: `f` parameter of the World Geodetic System 1984 (WGS84)
     """
 
+    GM = 3986004.418e8
+    """float: `GM` Geocentric Gravitational Constant of the World Geodetic System 1984 (WGS84)
+    """
+
+    M_earth = 3986004.418e8 / G
+    """float: `M_earth` mass of the Earth of the World Geodetic System 1984 (WGS84)
+    """
+
 
 R_earth: float = 6371.0088e3
 """float: Radius of the Earth using the International
 Union of Geodesy and Geophysics (IUGG) definition
+"""
+
+M_sun = 1.9884e30
+"""float: Mass of the Sun according to IAU 2009 System
+of Astronomical Constants.
+"""
+
+M_earth = 5.9722e24
+"""float: Mass of the Earth according to IAU 2009 System
+of Astronomical Constants.
 """
 
 
