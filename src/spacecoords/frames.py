@@ -100,6 +100,31 @@ def azel_to_ecef(
     return enu_to_ecef(lat, lon, enu, degrees=degrees)
 
 
+def enu_to_ecef_mat(
+    lat: float,
+    lon: float,
+    degrees: bool = False,
+) -> NDArray_3xN | NDArray_3:
+    """Rotate ENU (east/north/up) using geocentric latitude and longitude (and zenith)
+    to ECEF coordinate system, not including translation.
+
+    Returns
+    -------
+        (3,3) rotation matrix.
+    """
+    if degrees:
+        lat, lon = np.radians(lat), np.radians(lon)
+
+    mx = np.array(
+        [
+            [-np.sin(lon), -np.cos(lon) * np.sin(lat), np.cos(lon) * np.cos(lat)],
+            [np.cos(lon), -np.sin(lon) * np.sin(lat), np.sin(lon) * np.cos(lat)],
+            [0, np.cos(lat), np.sin(lat)],
+        ]
+    )
+    return mx
+
+
 def enu_to_ecef(
     lat: float,
     lon: float,
@@ -137,6 +162,31 @@ def enu_to_ecef(
 
     ecef = np.dot(mx, enu)
     return ecef
+
+
+def ecef_to_enu_mat(
+    lat: float,
+    lon: float,
+    degrees: bool = False,
+) -> NDArray_3xN | NDArray_3:
+    """Rotate ECEF coordinate system to local ENU (east,north,up) using geocentric
+    latitude and longitude (and zenith), not including translation.
+
+    Returns
+    -------
+        (3,3) rotation matrix.
+    """
+    if degrees:
+        lat, lon = np.radians(lat), np.radians(lon)
+
+    mx = np.array(
+        [
+            [-np.sin(lon), np.cos(lon), 0],
+            [-np.cos(lon) * np.sin(lat), -np.sin(lon) * np.sin(lat), np.cos(lat)],
+            [np.cos(lon) * np.cos(lat), np.sin(lon) * np.cos(lat), np.sin(lat)],
+        ]
+    )
+    return mx
 
 
 def ecef_to_enu(
@@ -255,20 +305,20 @@ def ecef_to_geodetic_wgs84(
 
     Esq = WGS84.a * WGS84.a - WGS84.b * WGS84.b
     F = 54 * WGS84.b * WGS84.b * xyz[2, sel] * xyz[2, sel]
-    G = r[sel]  * r[sel]  + (1 - WGS84.esq) * xyz[2, sel] * xyz[2, sel] - WGS84.esq * Esq
-    C = (WGS84.esq * WGS84.esq * F * r[sel]  * r[sel] ) / (np.power(G, 3))
+    G = r[sel] * r[sel] + (1 - WGS84.esq) * xyz[2, sel] * xyz[2, sel] - WGS84.esq * Esq
+    C = (WGS84.esq * WGS84.esq * F * r[sel] * r[sel]) / (np.power(G, 3))
     S = np.cbrt(1 + C + np.sqrt(C * C + 2 * C))
     P = F / (3 * np.power((S + 1 / S + 1), 2) * G * G)
     Q = np.sqrt(1 + 2 * WGS84.esq * WGS84.esq * P)
-    r_0 = -(P * WGS84.esq * r[sel] ) / (1 + Q) + np.sqrt(
+    r_0 = -(P * WGS84.esq * r[sel]) / (1 + Q) + np.sqrt(
         0.5 * WGS84.a * WGS84.a * (1 + 1.0 / Q)
         - P * (1 - WGS84.esq) * xyz[2, sel] * xyz[2, sel] / (Q * (1 + Q))
-        - 0.5 * P * r[sel]  * r[sel] 
+        - 0.5 * P * r[sel] * r[sel]
     )
-    U = np.sqrt(np.power((r[sel]  - WGS84.esq * r_0), 2) + xyz[2, sel] * xyz[2, sel])
-    V = np.sqrt(np.power((r[sel]  - WGS84.esq * r_0), 2) + (1 - WGS84.esq) * xyz[2, sel] * xyz[2, sel])
+    U = np.sqrt(np.power((r[sel] - WGS84.esq * r_0), 2) + xyz[2, sel] * xyz[2, sel])
+    V = np.sqrt(np.power((r[sel] - WGS84.esq * r_0), 2) + (1 - WGS84.esq) * xyz[2, sel] * xyz[2, sel])
     Z_0 = WGS84.b * WGS84.b * xyz[2, sel] / (WGS84.a * V)
-    lla[0, sel] = np.arctan((xyz[2, sel] + WGS84.e1sq * Z_0) / r[sel] )
+    lla[0, sel] = np.arctan((xyz[2, sel] + WGS84.e1sq * Z_0) / r[sel])
     lla[1, sel] = np.arctan2(xyz[1, sel], xyz[0, sel])
     lla[2, sel] = U * (1 - WGS84.b * WGS84.b / (WGS84.a * V))
 
