@@ -325,6 +325,6 @@ def ecef_to_geodetic_wgs84(
     if degrees:
         lla[:2, :] = np.degrees(lla[:2, :])
     if xyz_len is None:
-        lla = lla[:, 0]  # type: ignore
+        lla = lla[:, 0]
 
     return lla

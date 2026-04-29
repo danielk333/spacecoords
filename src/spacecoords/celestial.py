@@ -4,22 +4,22 @@
 Main usage is the `convert` function that wraps Astropy frame transformations.
 """
 
-from typing import Type, Any
 from pathlib import Path
-import numpy as np
-from astropy.time import Time
+from typing import Any, Type
+
+import astropy.config as config
 import astropy.coordinates as coord
 import astropy.units as units
-import astropy.config as config
+import numpy as np
+from astropy.time import Time
 
 from .spherical import cart_to_sph, sph_to_cart
-
 from .types import (
-    NDArray_N,
     NDArray_3,
-    NDArray_6,
     NDArray_3xN,
+    NDArray_6,
     NDArray_6xN,
+    NDArray_N,
     T,
 )
 
@@ -80,7 +80,9 @@ def astropy_get_body(
 def not_geocentric(frame: str) -> bool:
     """Check if the given frame name is one of the non-geocentric frames."""
     frame = frame.upper()
-    return frame in ["ICRS", "ICRF", "HCRS", "HCRF"] or frame.startswith("Heliocentric".upper())
+    return frame in ["ICRS", "ICRF", "HCRS", "HCRF"] or frame.startswith(
+        "Heliocentric".upper()
+    )
 
 
 def is_geocentric(frame: str) -> bool:
@@ -216,11 +218,13 @@ def ITRS_to_geodetic(
     ang_unit = units.deg if degrees else units.rad
 
     itrs_cord = _convert_to_astropy_3d(state, coord.ITRS, {})
-    wgs_cord = coord.EarthLocation.from_geocentric(itrs_cord.x, itrs_cord.y, itrs_cord.z)
+    wgs_cord = coord.EarthLocation.from_geocentric(
+        itrs_cord.x, itrs_cord.y, itrs_cord.z
+    )
     return (
-        wgs_cord.lat.to(ang_unit).value,  # type: ignore[attr-defined]
-        wgs_cord.lon.to(ang_unit).value,  # type: ignore[attr-defined]
-        wgs_cord.height.to(units.m).value,  # type: ignore[attr-defined]
+        wgs_cord.lat.to(ang_unit).value,
+        wgs_cord.lon.to(ang_unit).value,
+        wgs_cord.height.to(units.m).value,
     )
 
 

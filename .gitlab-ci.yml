@@ -15,6 +15,15 @@ stages:
     - python -m venv venv
     - source venv/bin/activate
 
+# Rules to trigger standard jobs
+.merge_request_rules:
+  rules:
+    - if: $CI_MERGE_REQUEST_TITLE =~ /^(\[Draft\]|\(Draft\)|Draft:)/
+      when: never
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
+    - if: $CI_COMMIT_BRANCH == "main"
+
 #######################
 ## Platforms testing ##
 
@@ -27,14 +36,12 @@ pytest:
       - VERSION: ["3.10", "3.11", "3.12", "3.13"]
   script:
     - uv python install $VERSION
-    - uv venv --seed --python $VERSION ./venv
-    - source venv/bin/activate
-    - pip install .[all,tests]
-    - pytest
+    - uv venv --python $VERSION
+    - source .venv/bin/activate
+    - uv pip install .[all,tests]
+    - uv run pytest
   rules:
-    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
-    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
-    - if: $CI_COMMIT_BRANCH == "main"
+    - !reference [.merge_request_rules, rules]
   coverage: /TOTAL.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/
 
 mypy:
@@ -44,9 +51,7 @@ mypy:
     - pip install .[all,type_checker]
     - mypy src/spacecoords --follow-untyped-imports --disallow-untyped-defs --warn-unused-ignores
   rules:
-    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
-    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
-    - if: $CI_COMMIT_BRANCH == "main"
+    - !reference [.merge_request_rules, rules]
 
 cyclomatic-complexity:
   stage: type_checking
@@ -55,9 +60,7 @@ cyclomatic-complexity:
     - pip install .[all,type_checker]
     - xenon src/spacecoords/ -m C -a A # Average of a file (-m): max C, Total average (-a): max A
   rules:
-    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
-    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
-    - if: $CI_COMMIT_BRANCH == "main"
+    - !reference [.merge_request_rules, rules]
 
 ###############
 ## Releasing ##

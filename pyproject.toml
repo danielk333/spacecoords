@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spacecoords"
-version = "0.2.0"
+version = "0.2.1"
 description = "A collection of coordinate transforms for convenient use"
 readme = { file = "README.md", content-type = "text/markdown" }
 authors = [{ name = "Daniel Kastinen", email = "daniel.kastinen@irf.se" }]
@@ -62,13 +62,23 @@ spacecoords = "spacecoords.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.mypy]
+disallow_untyped_defs = true
+follow_untyped_imports = true
+warn_unused_ignores = true
+packages = ["spacecoords"]
+
 [tool.black]
 line-length = 110
 
 
-[tool.pytest.ini_options]
-addopts = "-v --cov=spacecoords"
+[tool.pytest]
+addopts = ["-v", "--cov"]
 testpaths = ["tests"]
+
+[tool.coverage.run]
+include= ["spacecoords"]
+source = ["./src/"]
 
 [tool.coverage.report]
 exclude_also = [
