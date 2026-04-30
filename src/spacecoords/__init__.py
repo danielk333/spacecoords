@@ -2,15 +2,11 @@
 functions
 """
 
-from types import ModuleType
 import importlib.util
-from .version import __version__
+from types import ModuleType
 
-from . import linalg
-from . import spherical
-from . import constants
-from . import projection
-from . import interpolation
+from . import constants, hammer_aitoff, interpolation, linalg, projection, spherical
+from .version import __version__
 
 
 def _make_missing_module(name: str, dep: str) -> ModuleType:
@@ -26,9 +22,10 @@ def _make_missing_module(name: str, dep: str) -> ModuleType:
 
 # Optional modules
 if importlib.util.find_spec("astropy") is not None:
-    from . import celestial
+    from . import celestial, radiant
 else:
     celestial = _make_missing_module("celestial", "astropy")
+    radiant = _make_missing_module("radiant", "astropy")
 
 if importlib.util.find_spec("jplephem") is not None:
     from . import spk_basic
