@@ -5,19 +5,19 @@ import requests
 import argparse
 
 NAIF_URL = "https://naif.jpl.nasa.gov/pub/naif/"
+MPCORB_URL = "https://www.minorplanetcenter.net/iau/MPCORB/MPCORB.DAT"
 
 KERNEL_PATHS = {
     "planetary": "generic_kernels/spk/planets/",
 }
 
 
-def naif_kernel(
-    kernel_path: str,
+def download_target(
+    url: str,
     output_file: Path,
     progress: bool = True,
     chunk_size: int = 8192,
 ) -> None:
-    url = NAIF_URL + kernel_path
     with requests.get(url, stream=True) as r:
         r.raise_for_status()
         total_length = r.headers.get("content-length")
@@ -53,8 +53,16 @@ def naif_kernel(
 
 
 def naif_kernel_main(args: argparse.Namespace) -> None:
-    naif_kernel(
-        kernel_path=KERNEL_PATHS[args.kernel_type] + args.kernel_name,
+    download_target(
+        url=NAIF_URL + KERNEL_PATHS[args.kernel_type] + args.kernel_name,
+        output_file=args.output_file,
+        progress=True,
+    )
+
+
+def mpcorb_main(args: argparse.Namespace) -> None:
+    download_target(
+        url=MPCORB_URL,
         output_file=args.output_file,
         progress=True,
     )
