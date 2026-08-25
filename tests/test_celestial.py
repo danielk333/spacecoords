@@ -1,17 +1,30 @@
 import unittest
 import numpy as np
 import numpy.testing as nt
+from astropy.time import Time
 
 from spacecoords import celestial
 from spacecoords import constants
 
 
 class TestFrames(unittest.TestCase):
+    def test_inertial_to_non_inertial_velocity(self):
+        # zero velocity at surface of earth equator in inertial
+        x = np.array([constants.WGS84.a, 0, 0, 0, 0, 0])
+        t = Time("2026-01-01T00:00:00.00", scale="utc")
+        y = celestial.convert(t, x, in_frame="GCRS", out_frame="ITRS")
+        # approx earth surface velocity at equator in ecef
+        vel = 465.2
+        nt.assert_array_almost_equal(np.linalg.norm(y[3:]), vel, decimal=1)
 
     def test_geodetic_to_geocentric_lla(self):
         lat, lon, alt = 67.1, 20.5, 420.0
-        latg, long, altg = celestial.geodetic_lla_to_geocentric_lla(lat, lon, alt, degrees=True)
-        lat0, lon0, alt0 = celestial.geocentric_lla_to_geodetic_lla(latg, long, altg, degrees=True)
+        latg, long, altg = celestial.geodetic_lla_to_geocentric_lla(
+            lat, lon, alt, degrees=True
+        )
+        lat0, lon0, alt0 = celestial.geocentric_lla_to_geodetic_lla(
+            latg, long, altg, degrees=True
+        )
 
         dec = 3
         nt.assert_almost_equal(lat, lat0, decimal=dec)

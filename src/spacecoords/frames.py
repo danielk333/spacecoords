@@ -245,10 +245,10 @@ def geodetic_wgs84_to_ecef(
     """
     if degrees:
         lat, lon = np.radians(lat), np.radians(lon)
-    xi = np.sqrt(1 - WGS84.esq * np.sin(lat) ** 2)
-    x = (WGS84.a / xi + alt) * np.cos(lat) * np.cos(lon)
-    y = (WGS84.a / xi + alt) * np.cos(lat) * np.sin(lon)
-    z = (WGS84.a / xi * (1 - WGS84.esq) + alt) * np.sin(lat)
+    R = WGS84.a / np.sqrt(1 - WGS84.esq * np.sin(lat) ** 2)
+    x = (R + alt) * np.cos(lat) * np.cos(lon)
+    y = (R + alt) * np.cos(lat) * np.sin(lon)
+    z = (R * (1 - WGS84.esq) + alt) * np.sin(lat)
 
     return np.array([x, y, z])
 
